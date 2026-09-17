@@ -1,5 +1,5 @@
 -- ==========================================
--- 🛠️ UNIVERSAL MULTI-TOOL HUB (RESIZABLE STATS + TIME PLAYED)
+-- 🛠️ UNIVERSAL MULTI-TOOL HUB (ALL FEATURES)
 -- ==========================================
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
@@ -115,7 +115,7 @@ scroll.Size = UDim2.new(1, -10, 1, -45)
 scroll.Position = UDim2.new(0, 5, 0, 40)
 scroll.BackgroundTransparency = 1
 scroll.BorderSizePixel = 0
-scroll.CanvasSize = UDim2.new(0, 0, 0, 680)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 730) 
 scroll.ScrollBarThickness = 4
 scroll.Parent = main
 
@@ -633,14 +633,13 @@ end)
 -- ==========================================
 local statsFrame = Instance.new("Frame")
 statsFrame.Name = "StatsDisplayFrame"
--- Diperlebar agar muat 3 informasi (FPS, Ping, Waktu)
 statsFrame.Size = UDim2.new(0, 320, 0, 30) 
 statsFrame.Position = UDim2.new(0.5, -160, 0, 10)
 statsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 statsFrame.BackgroundTransparency = 0.2
 statsFrame.BorderSizePixel = 0
-statsFrame.Active = true       -- Agar bisa ditangkap mouse
-statsFrame.Draggable = true    -- Membuat panel bisa digeser dengan mudah
+statsFrame.Active = true       
+statsFrame.Draggable = true    
 statsFrame.ClipsDescendants = true
 statsFrame.Visible = false
 statsFrame.Parent = sg
@@ -649,7 +648,7 @@ local statsCorner = Instance.new("UICorner")
 statsCorner.CornerRadius = UDim.new(0, 6)
 statsCorner.Parent = statsFrame
 
--- Label FPS (Bagian Kiri, 33%)
+-- Label FPS
 local fpsLabel = Instance.new("TextLabel")
 fpsLabel.Name = "FpsLabel"
 fpsLabel.Size = UDim2.new(0.33, 0, 1, 0)
@@ -662,7 +661,7 @@ fpsLabel.TextScaled = true
 fpsLabel.TextWrapped = true
 fpsLabel.Parent = statsFrame
 
--- Label Ping (Bagian Tengah, 33%)
+-- Label Ping
 local pingLabel = Instance.new("TextLabel")
 pingLabel.Name = "PingLabel"
 pingLabel.Size = UDim2.new(0.33, 0, 1, 0)
@@ -675,24 +674,22 @@ pingLabel.TextScaled = true
 pingLabel.TextWrapped = true
 pingLabel.Parent = statsFrame
 
--- Label Time Played (Bagian Kanan, 34%)
+-- Label Time Played
 local timeLabel = Instance.new("TextLabel")
 timeLabel.Name = "TimeLabel"
 timeLabel.Size = UDim2.new(0.34, 0, 1, 0)
 timeLabel.Position = UDim2.new(0.66, 0, 0, 0)
 timeLabel.BackgroundTransparency = 1
 timeLabel.Text = "00:00:00"
-timeLabel.TextColor3 = Color3.fromRGB(0, 255, 130) -- Neon green text
+timeLabel.TextColor3 = Color3.fromRGB(0, 255, 130)
 timeLabel.Font = Enum.Font.SourceSansBold
 timeLabel.TextScaled = true
 timeLabel.TextWrapped = true
 timeLabel.Parent = statsFrame
 
--- EDGE RESIZING LOGIC KHUSUS UNTUK STATS FRAME --
+-- EDGE RESIZING LOGIC (STATS FRAME)
 local STATS_MIN_SIZE = Vector2.new(180, 20)
-
 local statsRightHandle = Instance.new("TextButton")
-statsRightHandle.Name = "RightHandle"
 statsRightHandle.Size = UDim2.new(0, BORDER_THICKNESS, 1, -BORDER_THICKNESS)
 statsRightHandle.Position = UDim2.new(1, -BORDER_THICKNESS, 0, 0)
 statsRightHandle.BackgroundTransparency = 1
@@ -701,7 +698,6 @@ statsRightHandle.ZIndex = 10
 statsRightHandle.Parent = statsFrame
 
 local statsBottomHandle = Instance.new("TextButton")
-statsBottomHandle.Name = "BottomHandle"
 statsBottomHandle.Size = UDim2.new(1, -BORDER_THICKNESS, 0, BORDER_THICKNESS)
 statsBottomHandle.Position = UDim2.new(0, 0, 1, -BORDER_THICKNESS)
 statsBottomHandle.BackgroundTransparency = 1
@@ -710,7 +706,6 @@ statsBottomHandle.ZIndex = 10
 statsBottomHandle.Parent = statsFrame
 
 local statsCornerHandle = Instance.new("TextButton")
-statsCornerHandle.Name = "CornerHandle"
 statsCornerHandle.Size = UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2)
 statsCornerHandle.Position = UDim2.new(1, -BORDER_THICKNESS * 2, 1, -BORDER_THICKNESS * 2)
 statsCornerHandle.BackgroundTransparency = 1
@@ -747,48 +742,37 @@ attachStatsResize(statsCornerHandle, "Corner")
 AddConnection(UserInputService.InputChanged:Connect(function(input)
     if statsResizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
         local delta = input.Position - statsResizeStartMouse
-        local newWidth = statsResizeStartSize.X
-        local newHeight = statsResizeStartSize.Y
+        local newWidth = math.max(STATS_MIN_SIZE.X, statsResizeStartSize.X + delta.X)
+        local newHeight = math.max(STATS_MIN_SIZE.Y, statsResizeStartSize.Y + delta.Y)
 
-        if statsCurrentMode == "Right" or statsCurrentMode == "Corner" then
-            newWidth = math.max(STATS_MIN_SIZE.X, statsResizeStartSize.X + delta.X)
-        end
-        if statsCurrentMode == "Bottom" or statsCurrentMode == "Corner" then
-            newHeight = math.max(STATS_MIN_SIZE.Y, statsResizeStartSize.Y + delta.Y)
-        end
+        if statsCurrentMode == "Right" then newHeight = statsResizeStartSize.Y end
+        if statsCurrentMode == "Bottom" then newWidth = statsResizeStartSize.X end
 
         statsFrame.Size = UDim2.new(0, newWidth, 0, newHeight)
     end
 end))
----------------------------------------------------
 
--- Update FPS dan Ping setiap Frame
+-- Update FPS dan Ping
 AddConnection(RunService.RenderStepped:Connect(function(dt)
     if statsFrame.Visible then
         fpsLabel.Text = "FPS: " .. math.round(1 / dt)
-        
         local pingVal = 0
-        pcall(function()
-            pingVal = math.round(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-        end)
+        pcall(function() pingVal = math.round(Stats.Network.ServerStatsItem["Data Ping"]:GetValue()) end)
         pingLabel.Text = "Ping: " .. pingVal .. " ms"
     end
 end))
 
--- Update Time Played (Setiap 1 Detik)
+-- Update Time Played
 local startTime = os.time()
 task.spawn(function()
     while true do
         task.wait(1)
-        -- Hentikan loop jika UI sudah di-destroy (Clean Kill)
         if not statsFrame or not statsFrame.Parent then break end
-        
         if statsFrame.Visible then
             local elapsed = os.time() - startTime
             local hours = math.floor(elapsed / 3600)
             local minutes = math.floor((elapsed % 3600) / 60)
             local seconds = elapsed % 60
-            
             timeLabel.Text = string.format("%02d:%02d:%02d", hours, minutes, seconds)
         end
     end
@@ -803,4 +787,132 @@ statsBtn.MouseButton1Click:Connect(function()
     statsFrame.Visible = isStatsActive
     statsBtn.BackgroundColor3 = isStatsActive and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(80, 80, 80)
     statsBtn.Text = "STATS PANEL (FPS/PING/TIME): " .. (isStatsActive and "AKTIF" or "NONAKTIF")
+end)
+
+-- ==========================================
+-- 9️⃣ FPS BOOSTER (GRAPHICS REDUCER) - TOGGLEABLE
+-- ==========================================
+local isFpsBoostActive = false
+local fpsBoostBtn = createToggleButton("FpsBoostBtn", "FPS BOOSTER: NONAKTIF", 11)
+
+-- Tabel "Memori" untuk menyimpan data tekstur original sebelum dihapus
+local originalGraphics = {
+    Lighting = {},
+    Terrain = {},
+    Objects = {}
+}
+
+fpsBoostBtn.MouseButton1Click:Connect(function()
+    isFpsBoostActive = not isFpsBoostActive
+    fpsBoostBtn.BackgroundColor3 = isFpsBoostActive and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(80, 80, 80)
+    fpsBoostBtn.Text = "FPS BOOSTER: " .. (isFpsBoostActive and "AKTIF" or "NONAKTIF")
+    
+    local lighting = game:GetService("Lighting")
+    local terrain = workspace.Terrain
+
+    if isFpsBoostActive then
+        -- 💾 SIMPAN DATA ORIGINAL --
+        originalGraphics.Lighting = {
+            GlobalShadows = lighting.GlobalShadows,
+            FogEnd = lighting.FogEnd,
+            Brightness = lighting.Brightness,
+            EnvironmentDiffuseScale = lighting.EnvironmentDiffuseScale,
+            EnvironmentSpecularScale = lighting.EnvironmentSpecularScale
+        }
+        originalGraphics.Terrain = {
+            WaterWaveSize = terrain.WaterWaveSize,
+            WaterWaveSpeed = terrain.WaterWaveSpeed,
+            WaterReflectance = terrain.WaterReflectance,
+            WaterTransparency = terrain.WaterTransparency
+        }
+        originalGraphics.Objects = {} -- Bersihkan sisa memori sebelumnya
+
+        -- Buka Cap FPS (Jika script diizinkan oleh executor)
+        if setfpscap then pcall(function() setfpscap(0) end) end
+
+        -- Turunkan Grafis Lingkungan & Cahaya
+        pcall(function()
+            terrain.WaterWaveSize = 0
+            terrain.WaterWaveSpeed = 0
+            terrain.WaterReflectance = 0
+            terrain.WaterTransparency = 0
+            settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+            
+            lighting.GlobalShadows = false
+            lighting.FogEnd = 9e9
+            lighting.Brightness = 1
+            lighting.EnvironmentDiffuseScale = 0
+            lighting.EnvironmentSpecularScale = 0
+        end)
+
+        -- Simpan & Hapus Textures, Effects, Particles
+        pcall(function()
+            for _, v in pairs(workspace:GetDescendants()) do
+                if v:IsA("Part") or v:IsA("UnionOperation") or v:IsA("CornerWedgePart") or v:IsA("TrussPart") or v:IsA("MeshPart") then
+                    table.insert(originalGraphics.Objects, {obj = v, prop = "Material", val = v.Material})
+                    table.insert(originalGraphics.Objects, {obj = v, prop = "Reflectance", val = v.Reflectance})
+                    v.Material = Enum.Material.SmoothPlastic
+                    v.Reflectance = 0
+                elseif (v:IsA("Decal") or v:IsA("Texture")) and v.Name ~= "Face" then
+                    table.insert(originalGraphics.Objects, {obj = v, prop = "Transparency", val = v.Transparency})
+                    v.Transparency = 1
+                elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
+                    table.insert(originalGraphics.Objects, {obj = v, prop = "Lifetime", val = v.Lifetime})
+                    v.Lifetime = NumberRange.new(0)
+                elseif v:IsA("Fire") or v:IsA("SpotLight") or v:IsA("PointLight") or v:IsA("Smoke") or v:IsA("Sparkles") then
+                    table.insert(originalGraphics.Objects, {obj = v, prop = "Enabled", val = v.Enabled})
+                    v.Enabled = false
+                end
+            end
+        end)
+
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "FPS Booster ON";
+            Text = "Grafis diturunkan dan FPS Unlocked.";
+            Duration = 3;
+        })
+
+    else
+        -- ♻️ KEMBALIKAN GRAFIS SEPERTI SEMULA --
+        
+        -- Kembalikan Cap FPS ke standar Roblox (60)
+        if setfpscap then pcall(function() setfpscap(60) end) end
+
+        -- Kembalikan Cahaya & Map
+        pcall(function()
+            if originalGraphics.Terrain.WaterWaveSize then
+                terrain.WaterWaveSize = originalGraphics.Terrain.WaterWaveSize
+                terrain.WaterWaveSpeed = originalGraphics.Terrain.WaterWaveSpeed
+                terrain.WaterReflectance = originalGraphics.Terrain.WaterReflectance
+                terrain.WaterTransparency = originalGraphics.Terrain.WaterTransparency
+            end
+            settings().Rendering.QualityLevel = Enum.QualityLevel.Automatic
+            
+            if originalGraphics.Lighting.GlobalShadows ~= nil then
+                lighting.GlobalShadows = originalGraphics.Lighting.GlobalShadows
+                lighting.FogEnd = originalGraphics.Lighting.FogEnd
+                lighting.Brightness = originalGraphics.Lighting.Brightness
+                lighting.EnvironmentDiffuseScale = originalGraphics.Lighting.EnvironmentDiffuseScale
+                lighting.EnvironmentSpecularScale = originalGraphics.Lighting.EnvironmentSpecularScale
+            end
+        end)
+
+        -- Kembalikan Tekstur, Efek, Partikel dari "Memori"
+        pcall(function()
+            for _, data in ipairs(originalGraphics.Objects) do
+                if data.obj and data.obj.Parent then
+                    data.obj[data.prop] = data.val
+                end
+            end
+        end)
+
+        -- Bersihkan "Memori"
+        originalGraphics.Objects = {}
+
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "FPS Booster OFF";
+            Text = "Grafis dikembalikan ke normal.";
+            Duration = 3;
+        })
+    end
 end)
