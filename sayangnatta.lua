@@ -1,5 +1,5 @@
 -- ==========================================
--- 🛠️ UNIVERSAL MULTI-TOOL HUB (RESIZABLE STATS)
+-- 🛠️ UNIVERSAL MULTI-TOOL HUB (RESIZABLE STATS + TIME PLAYED)
 -- ==========================================
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
@@ -629,12 +629,13 @@ antiAfkBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==========================================
--- 8️⃣ FPS & PING DISPLAY PANEL (DRAGGABLE & RESIZABLE)
+-- 8️⃣ FPS, PING & TIME PLAYED PANEL
 -- ==========================================
 local statsFrame = Instance.new("Frame")
 statsFrame.Name = "StatsDisplayFrame"
-statsFrame.Size = UDim2.new(0, 220, 0, 30)
-statsFrame.Position = UDim2.new(0.5, -110, 0, 10)
+-- Diperlebar agar muat 3 informasi (FPS, Ping, Waktu)
+statsFrame.Size = UDim2.new(0, 320, 0, 30) 
+statsFrame.Position = UDim2.new(0.5, -160, 0, 10)
 statsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 statsFrame.BackgroundTransparency = 0.2
 statsFrame.BorderSizePixel = 0
@@ -648,32 +649,47 @@ local statsCorner = Instance.new("UICorner")
 statsCorner.CornerRadius = UDim.new(0, 6)
 statsCorner.Parent = statsFrame
 
+-- Label FPS (Bagian Kiri, 33%)
 local fpsLabel = Instance.new("TextLabel")
 fpsLabel.Name = "FpsLabel"
-fpsLabel.Size = UDim2.new(0.5, 0, 1, 0)
+fpsLabel.Size = UDim2.new(0.33, 0, 1, 0)
 fpsLabel.Position = UDim2.new(0, 0, 0, 0)
 fpsLabel.BackgroundTransparency = 1
 fpsLabel.Text = "FPS: 0"
 fpsLabel.TextColor3 = Color3.fromRGB(0, 255, 127)
 fpsLabel.Font = Enum.Font.SourceSansBold
-fpsLabel.TextScaled = true     -- Teks menyesuaikan besarnya frame
+fpsLabel.TextScaled = true     
 fpsLabel.TextWrapped = true
 fpsLabel.Parent = statsFrame
 
+-- Label Ping (Bagian Tengah, 33%)
 local pingLabel = Instance.new("TextLabel")
 pingLabel.Name = "PingLabel"
-pingLabel.Size = UDim2.new(0.5, 0, 1, 0)
-pingLabel.Position = UDim2.new(0.5, 0, 0, 0)
+pingLabel.Size = UDim2.new(0.33, 0, 1, 0)
+pingLabel.Position = UDim2.new(0.33, 0, 0, 0)
 pingLabel.BackgroundTransparency = 1
 pingLabel.Text = "Ping: 0 ms"
 pingLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
 pingLabel.Font = Enum.Font.SourceSansBold
-pingLabel.TextScaled = true    -- Teks menyesuaikan besarnya frame
+pingLabel.TextScaled = true    
 pingLabel.TextWrapped = true
 pingLabel.Parent = statsFrame
 
+-- Label Time Played (Bagian Kanan, 34%)
+local timeLabel = Instance.new("TextLabel")
+timeLabel.Name = "TimeLabel"
+timeLabel.Size = UDim2.new(0.34, 0, 1, 0)
+timeLabel.Position = UDim2.new(0.66, 0, 0, 0)
+timeLabel.BackgroundTransparency = 1
+timeLabel.Text = "00:00:00"
+timeLabel.TextColor3 = Color3.fromRGB(0, 255, 130) -- Neon green text
+timeLabel.Font = Enum.Font.SourceSansBold
+timeLabel.TextScaled = true
+timeLabel.TextWrapped = true
+timeLabel.Parent = statsFrame
+
 -- EDGE RESIZING LOGIC KHUSUS UNTUK STATS FRAME --
-local STATS_MIN_SIZE = Vector2.new(120, 20)
+local STATS_MIN_SIZE = Vector2.new(180, 20)
 
 local statsRightHandle = Instance.new("TextButton")
 statsRightHandle.Name = "RightHandle"
@@ -759,13 +775,32 @@ AddConnection(RunService.RenderStepped:Connect(function(dt)
     end
 end))
 
+-- Update Time Played (Setiap 1 Detik)
+local startTime = os.time()
+task.spawn(function()
+    while true do
+        task.wait(1)
+        -- Hentikan loop jika UI sudah di-destroy (Clean Kill)
+        if not statsFrame or not statsFrame.Parent then break end
+        
+        if statsFrame.Visible then
+            local elapsed = os.time() - startTime
+            local hours = math.floor(elapsed / 3600)
+            local minutes = math.floor((elapsed % 3600) / 60)
+            local seconds = elapsed % 60
+            
+            timeLabel.Text = string.format("%02d:%02d:%02d", hours, minutes, seconds)
+        end
+    end
+end)
+
 -- Tombol Toggle Stats
 local isStatsActive = false
-local statsBtn = createToggleButton("StatsBtn", "FPS & PING PANEL: NONAKTIF", 10)
+local statsBtn = createToggleButton("StatsBtn", "STATS PANEL (FPS/PING/TIME): NONAKTIF", 10)
 
 statsBtn.MouseButton1Click:Connect(function()
     isStatsActive = not isStatsActive
     statsFrame.Visible = isStatsActive
     statsBtn.BackgroundColor3 = isStatsActive and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(80, 80, 80)
-    statsBtn.Text = "FPS & PING PANEL: " .. (isStatsActive and "AKTIF" or "NONAKTIF")
+    statsBtn.Text = "STATS PANEL (FPS/PING/TIME): " .. (isStatsActive and "AKTIF" or "NONAKTIF")
 end)
