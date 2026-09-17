@@ -1,11 +1,13 @@
 -- ==========================================
--- 🛠️ UNIVERSAL MULTI-TOOL HUB (WITH CLICK TP)
+-- 🛠️ UNIVERSAL MULTI-TOOL HUB (RESIZABLE STATS)
 -- ==========================================
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Debris = game:GetService("Debris")
+local VirtualUser = game:GetService("VirtualUser")
+local Stats = game:GetService("Stats")
 
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
@@ -113,7 +115,7 @@ scroll.Size = UDim2.new(1, -10, 1, -45)
 scroll.Position = UDim2.new(0, 5, 0, 40)
 scroll.BackgroundTransparency = 1
 scroll.BorderSizePixel = 0
-scroll.CanvasSize = UDim2.new(0, 0, 0, 580)
+scroll.CanvasSize = UDim2.new(0, 0, 0, 680)
 scroll.ScrollBarThickness = 4
 scroll.Parent = main
 
@@ -214,14 +216,12 @@ end
 
 minBtn.MouseButton1Click:Connect(toggleUI)
 
--- Keybind 'K' untuk menyembunyikan / menampilkan kembali UI
 AddConnection(UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not gameProcessed and input.KeyCode == Enum.KeyCode.K then
         toggleUI()
     end
 end))
 
--- Deklarasi variabel pembantu untuk cleanup saat tombol X ditekan
 local isFlyActive = false
 local stopFlying
 
@@ -239,7 +239,7 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ==========================================
--- 📐 EDGE RESIZING LOGIC
+-- 📐 EDGE RESIZING LOGIC (MAIN MENU)
 -- ==========================================
 local BORDER_THICKNESS = 8
 local MIN_SIZE = Vector2.new(220, 250)
@@ -605,7 +605,167 @@ AddConnection(Mouse.Button1Down:Connect(function()
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
-    -- Offset +3 studs ke atas agar karakter tidak terperangkap di tanah
     hrp.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
     makeTpMarker(pos)
 end))
+
+-- ==========================================
+-- 7️⃣ ANTI AFK
+-- ==========================================
+local isAntiAfkActive = false
+local antiAfkBtn = createToggleButton("AntiAfkBtn", "ANTI AFK: NONAKTIF", 9)
+
+AddConnection(LocalPlayer.Idled:Connect(function()
+    if isAntiAfkActive then
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new())
+    end
+end))
+
+antiAfkBtn.MouseButton1Click:Connect(function()
+    isAntiAfkActive = not isAntiAfkActive
+    antiAfkBtn.BackgroundColor3 = isAntiAfkActive and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(80, 80, 80)
+    antiAfkBtn.Text = "ANTI AFK: " .. (isAntiAfkActive and "AKTIF" or "NONAKTIF")
+end)
+
+-- ==========================================
+-- 8️⃣ FPS & PING DISPLAY PANEL (DRAGGABLE & RESIZABLE)
+-- ==========================================
+local statsFrame = Instance.new("Frame")
+statsFrame.Name = "StatsDisplayFrame"
+statsFrame.Size = UDim2.new(0, 220, 0, 30)
+statsFrame.Position = UDim2.new(0.5, -110, 0, 10)
+statsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+statsFrame.BackgroundTransparency = 0.2
+statsFrame.BorderSizePixel = 0
+statsFrame.Active = true       -- Agar bisa ditangkap mouse
+statsFrame.Draggable = true    -- Membuat panel bisa digeser dengan mudah
+statsFrame.ClipsDescendants = true
+statsFrame.Visible = false
+statsFrame.Parent = sg
+
+local statsCorner = Instance.new("UICorner")
+statsCorner.CornerRadius = UDim.new(0, 6)
+statsCorner.Parent = statsFrame
+
+local fpsLabel = Instance.new("TextLabel")
+fpsLabel.Name = "FpsLabel"
+fpsLabel.Size = UDim2.new(0.5, 0, 1, 0)
+fpsLabel.Position = UDim2.new(0, 0, 0, 0)
+fpsLabel.BackgroundTransparency = 1
+fpsLabel.Text = "FPS: 0"
+fpsLabel.TextColor3 = Color3.fromRGB(0, 255, 127)
+fpsLabel.Font = Enum.Font.SourceSansBold
+fpsLabel.TextScaled = true     -- Teks menyesuaikan besarnya frame
+fpsLabel.TextWrapped = true
+fpsLabel.Parent = statsFrame
+
+local pingLabel = Instance.new("TextLabel")
+pingLabel.Name = "PingLabel"
+pingLabel.Size = UDim2.new(0.5, 0, 1, 0)
+pingLabel.Position = UDim2.new(0.5, 0, 0, 0)
+pingLabel.BackgroundTransparency = 1
+pingLabel.Text = "Ping: 0 ms"
+pingLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
+pingLabel.Font = Enum.Font.SourceSansBold
+pingLabel.TextScaled = true    -- Teks menyesuaikan besarnya frame
+pingLabel.TextWrapped = true
+pingLabel.Parent = statsFrame
+
+-- EDGE RESIZING LOGIC KHUSUS UNTUK STATS FRAME --
+local STATS_MIN_SIZE = Vector2.new(120, 20)
+
+local statsRightHandle = Instance.new("TextButton")
+statsRightHandle.Name = "RightHandle"
+statsRightHandle.Size = UDim2.new(0, BORDER_THICKNESS, 1, -BORDER_THICKNESS)
+statsRightHandle.Position = UDim2.new(1, -BORDER_THICKNESS, 0, 0)
+statsRightHandle.BackgroundTransparency = 1
+statsRightHandle.Text = ""
+statsRightHandle.ZIndex = 10
+statsRightHandle.Parent = statsFrame
+
+local statsBottomHandle = Instance.new("TextButton")
+statsBottomHandle.Name = "BottomHandle"
+statsBottomHandle.Size = UDim2.new(1, -BORDER_THICKNESS, 0, BORDER_THICKNESS)
+statsBottomHandle.Position = UDim2.new(0, 0, 1, -BORDER_THICKNESS)
+statsBottomHandle.BackgroundTransparency = 1
+statsBottomHandle.Text = ""
+statsBottomHandle.ZIndex = 10
+statsBottomHandle.Parent = statsFrame
+
+local statsCornerHandle = Instance.new("TextButton")
+statsCornerHandle.Name = "CornerHandle"
+statsCornerHandle.Size = UDim2.new(0, BORDER_THICKNESS * 2, 0, BORDER_THICKNESS * 2)
+statsCornerHandle.Position = UDim2.new(1, -BORDER_THICKNESS * 2, 1, -BORDER_THICKNESS * 2)
+statsCornerHandle.BackgroundTransparency = 1
+statsCornerHandle.Text = ""
+statsCornerHandle.ZIndex = 11
+statsCornerHandle.Parent = statsFrame
+
+local statsResizing = false
+local statsCurrentMode = nil
+local statsResizeStartMouse, statsResizeStartSize
+
+local function attachStatsResize(handle, mode)
+    AddConnection(handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            statsResizing = true
+            statsCurrentMode = mode
+            statsResizeStartMouse = input.Position
+            statsResizeStartSize = Vector2.new(statsFrame.AbsoluteSize.X, statsFrame.AbsoluteSize.Y)
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    statsResizing = false
+                    statsCurrentMode = nil
+                end
+            end)
+        end
+    end))
+end
+
+attachStatsResize(statsRightHandle, "Right")
+attachStatsResize(statsBottomHandle, "Bottom")
+attachStatsResize(statsCornerHandle, "Corner")
+
+AddConnection(UserInputService.InputChanged:Connect(function(input)
+    if statsResizing and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - statsResizeStartMouse
+        local newWidth = statsResizeStartSize.X
+        local newHeight = statsResizeStartSize.Y
+
+        if statsCurrentMode == "Right" or statsCurrentMode == "Corner" then
+            newWidth = math.max(STATS_MIN_SIZE.X, statsResizeStartSize.X + delta.X)
+        end
+        if statsCurrentMode == "Bottom" or statsCurrentMode == "Corner" then
+            newHeight = math.max(STATS_MIN_SIZE.Y, statsResizeStartSize.Y + delta.Y)
+        end
+
+        statsFrame.Size = UDim2.new(0, newWidth, 0, newHeight)
+    end
+end))
+---------------------------------------------------
+
+-- Update FPS dan Ping setiap Frame
+AddConnection(RunService.RenderStepped:Connect(function(dt)
+    if statsFrame.Visible then
+        fpsLabel.Text = "FPS: " .. math.round(1 / dt)
+        
+        local pingVal = 0
+        pcall(function()
+            pingVal = math.round(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+        end)
+        pingLabel.Text = "Ping: " .. pingVal .. " ms"
+    end
+end))
+
+-- Tombol Toggle Stats
+local isStatsActive = false
+local statsBtn = createToggleButton("StatsBtn", "FPS & PING PANEL: NONAKTIF", 10)
+
+statsBtn.MouseButton1Click:Connect(function()
+    isStatsActive = not isStatsActive
+    statsFrame.Visible = isStatsActive
+    statsBtn.BackgroundColor3 = isStatsActive and Color3.fromRGB(0, 180, 0) or Color3.fromRGB(80, 80, 80)
+    statsBtn.Text = "FPS & PING PANEL: " .. (isStatsActive and "AKTIF" or "NONAKTIF")
+end)
