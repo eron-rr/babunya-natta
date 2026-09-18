@@ -762,7 +762,7 @@ AddConnection(RunService.RenderStepped:Connect(function(dt)
     frameCount = frameCount + 1
     
     -- Update UI setiap 0.5 detik agar tulisan stabil dan mudah dibaca
-    if timeAccumulator >= 0.5 then 
+    if timeAccumulator >= 1.5 then 
         local fps = math.round(frameCount / timeAccumulator)
         fpsLabel.Text = "FPS: " .. fps
         
