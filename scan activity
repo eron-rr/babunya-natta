@@ -1,30 +1,39 @@
--- ==========================================
--- 🏃 PLAYER ACTIVITY RECORDER TO .TXT
--- ==========================================
-local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
-local RunService = game:GetService("RunService")
+-- Tunggu sampai game benar-benar selesai loading
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
 
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- 🛡️ SISTEM BYPASS UI UNTUK DELTA & MOBILE EXECUTORS
+-- Tunggu sampai LocalPlayer dan PlayerGui benar-benar ada
+repeat task.wait(0.1) until LocalPlayer ~= nil
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui", 10)
+
+-- 🛡️ SISTEM BYPASS UI SUPER AMAN UNTUK DELTA & MOBILE
 local function GetSafeUIParent()
-    local success, parent = pcall(function()
-        if gethui then return gethui() end
-        return CoreGui
-    end)
-    if success and parent then 
-        return parent 
-    end
-    return LocalPlayer:WaitForChild("PlayerGui")
+    local parent = nil
+    -- Coba pakai fungsi khusus executor (paling aman dari deteksi)
+    pcall(function() parent = gethui() end)
+    if parent then return parent end
+    
+    -- Coba masukkan ke CoreGui
+    pcall(function() parent = game:GetService("CoreGui") end)
+    if parent then return parent end
+    
+    -- Opsi terakhir: Masukkan langsung ke UI Player (Pasti berhasil)
+    return PlayerGui
 end
 
 local UIParent = GetSafeUIParent()
 
--- Hapus UI lama jika dieksekusi ulang
-if UIParent:FindFirstChild("ActivityRecorderUI") then
-    UIParent.ActivityRecorderUI:Destroy()
-end
+-- Hapus UI lama jika ada supaya tidak dobel
+pcall(function()
+    if UIParent and UIParent:FindFirstChild("ActivityRecorderUI") then
+        UIParent.ActivityRecorderUI:Destroy()
+    end
+end)
 
 -- ==========================================
 -- 🎨 PEMBUATAN UI (DARK THEME)
@@ -49,10 +58,9 @@ local corner = Instance.new("UICorner")
 corner.CornerRadius = UDim.new(0, 8)
 corner.Parent = main
 
--- Topbar
 local topBar = Instance.new("Frame")
 topBar.Size = UDim2.new(1, 0, 0, 35)
-topBar.BackgroundColor3 = Color3.fromRGB(150, 80, 0) -- Orange Theme
+topBar.BackgroundColor3 = Color3.fromRGB(150, 80, 0)
 topBar.BorderSizePixel = 0
 topBar.Parent = main
 
@@ -71,7 +79,6 @@ title.TextSize = 16
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = topBar
 
--- Tombol Close
 local closeBtn = Instance.new("TextButton")
 closeBtn.Size = UDim2.new(0, 30, 0, 30)
 closeBtn.Position = UDim2.new(1, -35, 0, 2)
@@ -83,7 +90,6 @@ closeBtn.TextSize = 14
 closeBtn.Parent = topBar
 Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 5)
 
--- Preview Log Box
 local scrollBox = Instance.new("ScrollingFrame")
 scrollBox.Size = UDim2.new(1, -20, 0, 200)
 scrollBox.Position = UDim2.new(0, 10, 0, 45)
@@ -96,189 +102,3 @@ local logBox = Instance.new("TextLabel")
 logBox.Size = UDim2.new(1, -10, 1, 0)
 logBox.Position = UDim2.new(0, 5, 0, 5)
 logBox.BackgroundTransparency = 1
-logBox.TextColor3 = Color3.fromRGB(0, 255, 150)
-logBox.Font = Enum.Font.Code
-logBox.TextSize = 12
-logBox.TextXAlignment = Enum.TextXAlignment.Left
-logBox.TextYAlignment = Enum.TextYAlignment.Top
-logBox.Text = "-- Log Aktivitas Real-Time --\n"
-logBox.Parent = scrollBox
-
--- Status Label
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Size = UDim2.new(1, -20, 0, 20)
-statusLabel.Position = UDim2.new(0, 10, 0, 250)
-statusLabel.BackgroundTransparency = 1
-statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-statusLabel.Text = "Status: Idle"
-statusLabel.Font = Enum.Font.SourceSansBold
-statusLabel.TextSize = 14
-statusLabel.Parent = main
-
--- Container Tombol Record & Stop
-local btnContainer = Instance.new("Frame")
-btnContainer.Size = UDim2.new(1, -20, 0, 40)
-btnContainer.Position = UDim2.new(0, 10, 0, 275)
-btnContainer.BackgroundTransparency = 1
-btnContainer.Parent = main
-
-local btnRecord = Instance.new("TextButton")
-btnRecord.Size = UDim2.new(0.48, 0, 1, 0)
-btnRecord.Position = UDim2.new(0, 0, 0, 0)
-btnRecord.BackgroundColor3 = Color3.fromRGB(0, 120, 0)
-btnRecord.Text = "▶ RECORD"
-btnRecord.TextColor3 = Color3.fromRGB(255, 255, 255)
-btnRecord.Font = Enum.Font.SourceSansBold
-btnRecord.TextSize = 14
-btnRecord.Parent = btnContainer
-Instance.new("UICorner", btnRecord).CornerRadius = UDim.new(0, 6)
-
-local btnStop = Instance.new("TextButton")
-btnStop.Size = UDim2.new(0.48, 0, 1, 0)
-btnStop.Position = UDim2.new(0.52, 0, 0, 0)
-btnStop.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
-btnStop.Text = "⏹ STOP"
-btnStop.TextColor3 = Color3.fromRGB(255, 255, 255)
-btnStop.Font = Enum.Font.SourceSansBold
-btnStop.TextSize = 14
-btnStop.Parent = btnContainer
-Instance.new("UICorner", btnStop).CornerRadius = UDim.new(0, 6)
-
--- Tombol Save ke TXT
-local btnSave = Instance.new("TextButton")
-btnSave.Size = UDim2.new(1, -20, 0, 40)
-btnSave.Position = UDim2.new(0, 10, 0, 325)
-btnSave.BackgroundColor3 = Color3.fromRGB(0, 100, 180)
-btnSave.Text = "💾 SAVE LOG TO .TXT"
-btnSave.TextColor3 = Color3.fromRGB(255, 255, 255)
-btnSave.Font = Enum.Font.SourceSansBold
-btnSave.TextSize = 14
-btnSave.Parent = main
-Instance.new("UICorner", btnSave).CornerRadius = UDim.new(0, 6)
-
--- ==========================================
--- ⚙️ LOGIC & RECORDING SYSTEM
--- ==========================================
-local isRecording = false
-local logData = ""
-local recordConnections = {}
-
--- Fungsi untuk menambah log
-local function addLog(action)
-    if not isRecording then return end
-    local timeStr = os.date("%H:%M:%S")
-    local entry = string.format("[%s] %s\n", timeStr, action)
-    
-    logData = logData .. entry
-    
-    -- Update UI Text (Dibatasi agar tidak ngelag di HP)
-    local lines = string.split(logData, "\n")
-    if #lines > 50 then
-        local displayData = ""
-        for i = #lines - 50, #lines do
-            displayData = displayData .. lines[i] .. "\n"
-        end
-        logBox.Text = displayData
-    else
-        logBox.Text = logData
-    end
-    
-    -- Auto Scroll ke bawah
-    scrollBox.CanvasPosition = Vector2.new(0, scrollBox.AbsoluteWindowSize.Y * 10)
-end
-
-local function stopRecording()
-    isRecording = false
-    statusLabel.Text = "Status: Stopped"
-    statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
-    
-    -- Matikan semua koneksi scanner
-    for _, conn in ipairs(recordConnections) do
-        if conn and conn.Connected then
-            conn:Disconnect()
-        end
-    end
-    table.clear(recordConnections)
-end
-
-local function startRecording()
-    if isRecording then return end
-    logData = "-- [ STARTING ACTIVITY LOG ] --\n\n"
-    logBox.Text = logData
-    isRecording = true
-    statusLabel.Text = "Status: 🔴 RECORDING..."
-    statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
-    
-    local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-    local hum = char:WaitForChild("Humanoid", 5)
-    
-    if not hum then 
-        addLog("Error: Humanoid tidak ditemukan!")
-        return 
-    end
-
-    -- 1. Track State (Jumping, Running, Died, dll)
-    table.insert(recordConnections, hum.StateChanged:Connect(function(old, new)
-        local stateName = string.gsub(tostring(new), "Enum.HumanoidStateType.", "")
-        addLog("State Change: " .. stateName)
-    end))
-
-    -- 2. Track Animasi yang dimainkan
-    table.insert(recordConnections, hum.AnimationPlayed:Connect(function(animTrack)
-        if animTrack.Animation and animTrack.Animation.AnimationId then
-            addLog("Anim Played: " .. tostring(animTrack.Animation.AnimationId))
-        end
-    end))
-
-    -- 3. Track Tool (Item Equip & Use)
-    table.insert(recordConnections, char.ChildAdded:Connect(function(child)
-        if child:IsA("Tool") then
-            addLog("Tool Equipped: " .. child.Name)
-            
-            -- Cek kapan tool itu ditekan (digunakan)
-            table.insert(recordConnections, child.Activated:Connect(function()
-                addLog("Tool Used: " .. child.Name)
-            end))
-        end
-    end))
-
-    table.insert(recordConnections, char.ChildRemoved:Connect(function(child)
-        if child:IsA("Tool") then
-            addLog("Tool Unequipped: " .. child.Name)
-        end
-    end))
-
-    -- 4. Track Posisi setiap 2 Detik
-    task.spawn(function()
-        while isRecording do
-            task.wait(2)
-            if isRecording and char:FindFirstChild("HumanoidRootPart") then
-                local pos = char.HumanoidRootPart.Position
-                addLog(string.format("Position: X=%.1f, Y=%.1f, Z=%.1f", pos.X, pos.Y, pos.Z))
-            end
-        end
-    end)
-end
-
--- ==========================================
--- 🖱️ BUTTON EVENTS
--- ==========================================
-closeBtn.MouseButton1Click:Connect(function()
-    stopRecording()
-    sg:Destroy()
-end)
-
-btnRecord.MouseButton1Click:Connect(startRecording)
-btnStop.MouseButton1Click:Connect(stopRecording)
-
-btnSave.MouseButton1Click:Connect(function()
-    if logData == "" or logData == "-- [ STARTING ACTIVITY LOG ] --\n\n" then
-        btnSave.Text = "⚠️ RECORD DULU!"
-        task.wait(1.5)
-        btnSave.Text = "💾 SAVE LOG TO .TXT"
-        return
-    end
-
-    if writefile then
-        local success, err = pcall(function()
-            local fileName = "Activity
